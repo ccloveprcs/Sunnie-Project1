@@ -1,0 +1,86 @@
+Found 50 states in JSON file
+Sample states: ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California']
+Start city: Iowa
+End city: Washington DC
+Total cities: 51
+=== Ant Colony Optimization for State Capitals TSP ===
+Loaded 51 cities with valid coordinates
+Starting Ant Colony Optimization...
+Cities: 51, Ants: 50, Iterations: 100
+Start: Iowa
+End: Washington DC
+
+Iteration  20: Best = 17937.40 miles, Avg = 22439.76 miles
+Iteration  40: Best = 17205.79 miles, Avg = 21956.43 miles
+Iteration  60: Best = 17205.79 miles, Avg = 21315.77 miles
+Iteration  80: Best = 17205.79 miles, Avg = 21642.17 miles
+Iteration 100: Best = 16878.92 miles, Avg = 21270.52 miles
+
+Optimization completed!
+Best distance: 16878.92 miles
+Best route: Iowa -> Nebraska -> Kansas -> Missouri -> Illinois -> Indiana -> Kentucky -> West Virginia -> Ohio -> Michigan -> Wisconsin -> Minnesota -> South Dakota -> North Dakota -> Montana -> Idaho -> Utah -> Nevada -> California -> Oregon -> Washington -> Alaska -> Hawaii -> Arizona -> New Mexico -> Colorado -> Wyoming -> Oklahoma -> Texas -> Louisiana -> Mississippi -> Arkansas -> Tennessee -> Georgia -> Alabama -> Florida -> South Carolina -> North Carolina -> Virginia -> Maryland -> Delaware -> New Jersey -> Pennsylvania -> New York -> Connecticut -> Rhode Island -> Massachusetts -> New Hampshire -> Vermont -> Maine -> Washington DC
+
+============================================================
+FINAL RESULTS
+============================================================
+Total distance: 16878.92 miles
+Number of cities: 51
+
+Optimal Route:
+ 1. Iowa (Des Moines)
+ 2. Nebraska (Lincoln)
+ 3. Kansas (Topeka)
+ 4. Missouri (Jefferson City)
+ 5. Illinois (Springfield)
+ 6. Indiana (Indianapolis)
+ 7. Kentucky (Frankfort)
+ 8. West Virginia (Charleston)
+ 9. Ohio (Columbus)
+10. Michigan (Lansing)
+11. Wisconsin (Madison)
+12. Minnesota (Saint Paul)
+13. South Dakota (Pierre)
+14. North Dakota (Bismarck)
+15. Montana (Helena)
+16. Idaho (Boise)
+17. Utah (Salt Lake City)
+18. Nevada (Carson City)
+19. California (Sacramento)
+20. Oregon (Salem)
+21. Washington (Olympia)
+22. Alaska (Juneau)
+23. Hawaii (Honolulu)
+24. Arizona (Phoenix)
+25. New Mexico (Santa Fe)
+26. Colorado (Denver)
+27. Wyoming (Cheyenne)
+28. Oklahoma (Oklahoma City)
+29. Texas (Austin)
+30. Louisiana (Baton Rouge)
+31. Mississippi (Jackson)
+32. Arkansas (Little Rock)
+33. Tennessee (Nashville)
+34. Georgia (Atlanta)
+35. Alabama (Montgomery)
+36. Florida (Tallahassee)
+37. South Carolina (Columbia)
+38. North Carolina (Raleigh)
+39. Virginia (Richmond)
+40. Maryland (Annapolis)
+41. Delaware (Dover)
+42. New Jersey (Trenton)
+43. Pennsylvania (Harrisburg)
+44. New York (Albany)
+45. Connecticut (Hartford)
+46. Rhode Island (Providence)
+47. Massachusetts (Boston)
+48. New Hampshire (Concord)
+49. Vermont (Montpelier)
+50. Maine (Augusta)
+51. Washington DC (Washington)
+
+----------------------------------------
+COMPARISON WITH NEAREST NEIGHBOR:
+Nearest Neighbor distance: 22540.56 miles
+ACO distance: 16878.92 miles
+Improvement: 25.1%
