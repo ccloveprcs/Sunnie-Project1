@@ -173,22 +173,29 @@ class AntColonyTSP:
             self.distance_history.append(avg_distance)
             
             if verbose and (iteration + 1) % 20 == 0:
-                print(f"Iteration {iteration + 1:3d}: Best = {self.best_distance:.2f} km, "
-                      f"Avg = {avg_distance:.2f} km")
+                print(f"Iteration {iteration + 1:3d}: Best = {self.best_distance:.2f} miles, "
+                      f"Avg = {avg_distance:.2f} miles")
         
         if verbose:
             print(f"\nOptimization completed!")
-            print(f"Best distance: {self.best_distance:.2f} km")
+            print(f"Best distance: {self.best_distance:.2f} miles")
             print(f"Best route: {' -> '.join([self.city_names[i] for i in self.best_route])}")
         
         return self.best_route, self.best_distance
 
 def haversine(p1: Tuple[float, float], p2: Tuple[float, float]) -> float:
-    """Calculate great-circle distance between two points on Earth (in km)"""
+    """Calculate great-circle distance between two points on Earth (in miles)"""
     lat1, lon1, lat2, lon2 = map(math.radians, (*p1, *p2))
     dlat, dlon = lat2 - lat1, lon2 - lon1
     a = math.sin(dlat/2) ** 2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2) ** 2
-    return 6371.0 * 2 * math.asin(math.sqrt(a))
+    return 3959.0 * 2 * math.asin(math.sqrt(a))
+
+def find_state_by_capital(data: Dict, capital_name: str) -> str:
+    """Find state name by capital city name"""
+    for state, info in data.items():
+        if info.get("capital", "").lower() == capital_name.lower():
+            return state
+    return None
 
 def load_state_capitals(json_file: str) -> Tuple[Dict, List[str], np.ndarray]:
     """Load state capitals data and create distance matrix"""
@@ -198,36 +205,62 @@ def load_state_capitals(json_file: str) -> Tuple[Dict, List[str], np.ndarray]:
         raise FileNotFoundError(f"{json_file} not found in current directory")
     
     with open(json_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
+        json_data = json.load(f)
     
-    # Patch missing coordinates
-    MISSING = {
-        "Minnesota": {"latitude": 44.953703, "longitude": -93.089958},
-        "New York":  {"latitude": 42.652579, "longitude": -73.756232},
-        "Ohio":      {"latitude": 39.961176, "longitude": -82.998794},
-        "Tennessee": {"latitude": 36.162663, "longitude": -86.781601},
-    }
-    data.update(MISSING)
+    # Extract the states data from the nested structure
+    if "states" in json_data:
+        data = json_data["states"]
+        print(f"Found {len(data)} states in JSON file")
+    else:
+        # Fallback: assume data is directly at top level
+        data = json_data
+        print(f"Found {len(data)} entries in JSON file")
     
-    # Add Washington DC
-    data["Washington DC"] = {
-        "capital": "Washington",
-        "address": "1 First St SE, Washington, DC 20004",
-        "latitude": 38.907192,
-        "longitude": -77.036873
-    }
+    print("Sample states:", list(data.keys())[:5])
     
-    # Create ordered list: Iowa first, DC last, others alphabetical
-    START_STATE = "Iowa"
+    # Add Washington DC if not present
+    if "Washington DC" not in data:
+        data["Washington DC"] = {
+            "capital": "Washington",
+            "address": "1 First St SE, Washington, DC 20004",
+            "latitude": 38.907192,
+            "longitude": -77.036873
+        }
+    
+    # Find Iowa by looking for Des Moines as capital, or use first available state
+    iowa_state = find_state_by_capital(data, "Des Moines")
+    if iowa_state is None:
+        # If Iowa/Des Moines not found, use the first state alphabetically
+        iowa_state = sorted(data.keys())[0]
+        print(f"Warning: Iowa not found, using {iowa_state} as start state")
+    
+    START_STATE = iowa_state
     END_CITY = "Washington DC"
+    
+    # Create ordered list: Iowa/start first, DC last, others alphabetical
     other_states = sorted(s for s in data if s not in {START_STATE, END_CITY})
     ordered_states = [START_STATE] + other_states + [END_CITY]
     
-    # Extract coordinates
-    coords = [
-        (float(data[state]["latitude"]), float(data[state]["longitude"]))
-        for state in ordered_states
-    ]
+    print(f"Start city: {START_STATE}")
+    print(f"End city: {END_CITY}")
+    print(f"Total cities: {len(ordered_states)}")
+    
+    # Extract coordinates with error handling
+    coords = []
+    valid_states = []
+    
+    for state in ordered_states:
+        if state in data:
+            state_data = data[state]
+            if "latitude" in state_data and "longitude" in state_data:
+                lat = float(state_data["latitude"])
+                lon = float(state_data["longitude"])
+                coords.append((lat, lon))
+                valid_states.append(state)
+            else:
+                print(f"Warning: Missing coordinates for {state}")
+        else:
+            print(f"Warning: {state} not found in data")
     
     # Create distance matrix
     n = len(coords)
@@ -238,26 +271,37 @@ def load_state_capitals(json_file: str) -> Tuple[Dict, List[str], np.ndarray]:
             if i != j:
                 distance_matrix[i][j] = haversine(coords[i], coords[j])
     
-    return data, ordered_states, distance_matrix
+    return data, valid_states, distance_matrix
 
 def main():
     """Main function to run ACO on state capitals TSP"""
     
-    # Load data
-    JSON_FILE = "state_capitals_json(1).json"
+    # Path to your JSON file in Downloads folder
+    import os
+    home_dir = os.path.expanduser("~")
+    JSON_FILE = os.path.join(home_dir, "Downloads", "state_capitals_json.json")
+    
     try:
         data, city_names, distance_matrix = load_state_capitals(JSON_FILE)
     except FileNotFoundError:
         print(f"Error: {JSON_FILE} not found!")
         print("Please make sure the JSON file is in the current directory.")
+        print("Current directory files:", os.listdir("."))
+        return
+    except Exception as e:
+        print(f"Error loading data: {e}")
+        return
+    
+    if len(city_names) < 2:
+        print("Error: Need at least 2 cities with valid coordinates")
         return
     
     print("=== Ant Colony Optimization for State Capitals TSP ===")
-    print(f"Loaded {len(city_names)} cities")
+    print(f"Loaded {len(city_names)} cities with valid coordinates")
     
     # Set up ACO parameters
-    start_idx = 0  # Iowa
-    end_idx = len(city_names) - 1  # Washington DC
+    start_idx = 0  # First city (Iowa or first available)
+    end_idx = len(city_names) - 1  # Last city (Washington DC)
     
     # Create ACO solver
     aco = AntColonyTSP(
@@ -280,7 +324,7 @@ def main():
     print("\n" + "="*60)
     print("FINAL RESULTS")
     print("="*60)
-    print(f"Total distance: {best_distance:.2f} km")
+    print(f"Total distance: {best_distance:.2f} miles")
     print(f"Number of cities: {len(best_route)}")
     print("\nOptimal Route:")
     for i, city_idx in enumerate(best_route, 1):
@@ -288,7 +332,7 @@ def main():
         if city_name == "Washington DC":
             capital_name = "Washington"
         else:
-            capital_name = data[city_name].get("capital", "Unknown")
+            capital_name = data[city_name].get("capital", "Unknown") if city_name in data else "Unknown"
         print(f"{i:2d}. {city_name} ({capital_name})")
     
     # Compare with a simple nearest neighbor for reference
@@ -324,9 +368,10 @@ def main():
     nn_route, nn_distance = nearest_neighbor(distance_matrix, start_idx, end_idx)
     improvement = ((nn_distance - best_distance) / nn_distance) * 100
     
-    print(f"Nearest Neighbor distance: {nn_distance:.2f} km")
-    print(f"ACO distance: {best_distance:.2f} km")
+    print(f"Nearest Neighbor distance: {nn_distance:.2f} miles")
+    print(f"ACO distance: {best_distance:.2f} miles")
     print(f"Improvement: {improvement:.1f}%")
 
 if __name__ == "__main__":
     main()
+   
